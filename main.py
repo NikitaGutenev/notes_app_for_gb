@@ -6,10 +6,7 @@ from os import name,system
 class Note:
     __id = []
     def __new__(cls):
-        if len(cls.__id) == 0:
-            cls.__id.append(1)
-        else:
-            cls.__id.append(cls.__id[-1]+1)
+        cls.__id.append(get_new_id())
         return super().__new__(cls)
 
     def __init__(self):
@@ -41,14 +38,19 @@ class ListNotes:
     def __init__(self):
         self.notes = {}
 
-    def edit(self):
-        id = ''
-        while not id.isdigit():
-            id = input('''Введите id заметки которую хотите изменить либо print для вывода всех заметок в буффере
-            Ваш выбор: ''')
-            if id == 'print':
-                self.print()
-        note = self.notes[int(id)]
+    def edit(self,mode = 'notes',obj = None):
+        if mode == 'json':
+            note = obj
+        else:
+            id = ''
+            while not id.isdigit():
+                id = input('''Введите id заметки которую хотите изменить либо print для вывода всех заметок в буффере
+                Ваш выбор: ''')
+                if id == 'print':
+                    self.print()
+            note = self.notes[int(id)]
+
+
         choose = input(
         '''Что вы хотите изменить?
         0 - заголовок
@@ -81,6 +83,7 @@ class ListNotes:
             print('Выход без изменений...')
         if choose in ('0','1','2'):
             note.date = datetime.datetime.today().strftime("%Y-%m-%d-%H.%M.%S")
+            return note
 
     def add(self):
         tmp = Note()
@@ -130,18 +133,17 @@ class ListNotes:
             out[i[0]]={'id':c.id,
                        'Заголовок':c.title,
                        'Тело':c.data,
-                       'Последнее изменение':c.date,
-                       'Ссылка на объект': f'{c}'}
-        if int(mode):
+                       'Последнее изменение':c.date}
+        if bool(int(mode)):
             mode = 'a'
         else:
             mode = 'w'
 
-        with open('NOTES.json',f'{mode}+',encoding='UTF-8') as dt:
+        with open('NOTES.json',mode,encoding='UTF-8') as dt:
             res = []
             if mode == 'a':
                 try:
-                    tmp = json.loads(dt)
+                    tmp = json.load(dt)
                     res.append(tmp)
                 except:
                     pass
@@ -159,6 +161,7 @@ class ListNotes:
                         print('-------------')
                         for k in j.items():
                             print(f'{k[0]} - {k[1]}')
+                print('-------------')
             except:
                 print('Файл json пуст')
 
@@ -181,17 +184,100 @@ class ListNotes:
         else:
             print('Вы ничего не удалили')
 
+    def edit_json(self):
+        id = input('''Введите id заметки которую хотите отредактировать из файла json 
+            либо im для вывода всех заметок в файле json
+            либо другой символ чтобы выйти без изменений
+            Ваш выбор: ''')
+        while not id.isdigit():
+            if id == 'im':
+                self.input()
+            else:
+                return
+            id = input('''Введите id заметки которую хотите отредактировать из файла json 
+            либо im для вывода всех заметок в файле json
+            либо другой символ чтобы выйти без изменений
+            Ваш выбор: ''')
+
+        with open('NOTES.json','r',encoding='UTF-8') as data:
+            try:
+                js = json.load(data)
+            except ValueError:
+                print('Файл json пуст')
+                return
+            break_flag = False
+            find_flag = False
+            open('NOTES.json','w').close()
+            tmp_note = Note()
+
+            for i in js:
+                if break_flag:
+                    break
+
+                for _,j in i.items():
+                    if break_flag:
+                        break
+
+                    for k in j.items():
+                        if str(k[1]) == id or find_flag:
+                            break_flag = True
+                            tmp_note.id = k[1]
+                            find_flag = True
+                            if k[0] == 'Заголовок':
+                                tmp_note.title = k[1]
+                            if k[0] == 'Тело':
+                                tmp_note.data = k[1]
+            
+            if find_flag:
+                tmp_note = self.edit('json',tmp_note)
+            else:
+                print(f'Такого id({id}) не существует')
+            
+        with open('NOTES.json','a',encoding='UTF-8') as data:
+            break_flag = False
+            find_flag = False
+            for i in enumerate(js):
+                if break_flag:
+                    break
+                for _,j in enumerate(i[1].items()):
+                    if break_flag:
+                        break
+                    for k in j[1].items():
+                        if str(k[1]) == id or find_flag:
+                            break_flag = True
+                            find_flag = True
+                            if k[0] == 'id':
+                                js[i[0]][j[0]]['id'] = k[1]
+                            if k[0] == 'Заголовок':
+                                js[i[0]][j[0]]['Заголовок'] = tmp_note.title
+                            if k[0] == 'Тело':
+                                js[i[0]][j[0]]['Тело'] = tmp_note.data
+                            if k[0] == 'Последнее изменение':
+                                js[i[0]][j[0]]['Последнее изменение'] = datetime.datetime.today().strftime("%Y-%m-%d-%H.%M.%S")
+            json.dump(js,data,ensure_ascii=False,indent=4)
+
+                
+
 def clear():  
     if name == 'nt':  
         _ = system('cls')
     else:  
         _ = system('clear')
 
+def get_new_id():
+    with open('NOTES.json','r',encoding='UTF-8') as data:
+        try:
+            tmp = json.load(data)
+            res = tmp[-1]
+            return res[str(max(map(int,res.keys())))]['id'] + 1
+        except:
+            return 1
 
 def commands():
     print('''Доступные команды:
     add - создать заметку
     edit - редактировать заметку
+    edjs - редактировать заметку из файла json
     rm - удалить заметку
     ex - отправить все ваши заметки в json файл
     im - вывести в консоль все заметки из json файла
@@ -213,6 +299,8 @@ while prog:
             List.add()
         case 'edit':
             List.edit()
+        case 'edjs':
+            List.edit_json()
         case 'rm':
             List.rm()
         case 'ex':
