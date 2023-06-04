@@ -1,12 +1,15 @@
 import datetime
 import json
 from os import name,system
+from copy import deepcopy
 
 
 class Note:
     __id = []
     def __new__(cls):
         cls.__id.append(get_new_id())
+        if len(cls.__id)==2 and cls.__id[-2] == cls.__id[-1]:
+            cls.__id[-1] = cls.__id[-2] + 1
         return super().__new__(cls)
 
     def __init__(self):
@@ -217,7 +220,7 @@ class ListNotes:
         with open('NOTES.json','r',encoding='UTF-8') as data:
             try:
                 js = json.load(data)
-            except ValueError:
+            except:
                 print('Файл json пуст')
                 return
             break_flag = False
@@ -271,6 +274,69 @@ class ListNotes:
                                 js[i[0]][j[0]]['Последнее изменение'] = datetime.datetime.today().strftime("%Y-%m-%d-%H.%M.%S")
             json.dump(js,data,ensure_ascii=False,indent=4)
 
+    def del_from_json(self):
+        id = input('''Введите id заметки которую хотите удалить из файла json 
+            либо im для вывода всех заметок в файле json
+            либо другой символ чтобы выйти без изменений
+            Ваш выбор: ''')
+        while not id.isdigit():
+            if id == 'im':
+                self.input()
+            else:
+                return
+            id = input('''Введите id заметки которую хотите удалить из файла json 
+            либо im для вывода всех заметок в файле json
+            либо другой символ чтобы выйти без изменений
+            Ваш выбор: ''')
+
+        with open('NOTES.json','r',encoding='UTF-8') as data:
+            try:
+                js = json.load(data)
+            except:
+                print('Файл json пуст')
+                return
+            break_flag = False
+            find_flag = False
+            open('NOTES.json','w').close()
+
+            for i in js:
+                if break_flag:
+                    break
+
+                for _,j in i.items():
+                    if break_flag:
+                        break
+
+                    for k in j.items():
+                        if str(k[1]) == id or find_flag:
+                            break_flag = True
+                            find_flag = True
+
+            if find_flag:
+                link = deepcopy(js)
+                with open('NOTES.json','a',encoding='UTF-8') as data:
+                    break_flag = False
+                    find_flag = False
+                    for i in enumerate(link):
+                        if break_flag:
+                            break
+                        for _,j in enumerate(i[1].items()):
+                            if break_flag:
+                                break
+                            for k in j[1].items():
+                                if str(k[1]) == id:
+                                    break_flag = True
+                                    del js[i[0]][j[0]]
+                                    if len(js[i[0]]) == 0:
+                                        del js[i[0]]
+                                    break
+                    if len(js) != 0:
+                        json.dump(js,data,ensure_ascii=False,indent=4)
+                    else:
+                        pass
+            else:
+                print(f'Такого id({id}) не существует')
+            
                 
 
 def clear():  
@@ -294,6 +360,7 @@ def commands():
     edit - редактировать заметку
     edjs - редактировать заметку из файла json
     rm - удалить заметку
+    rmjs - удалить элемент из файла json
     ex - отправить все ваши заметки в json файл
     im - вывести в консоль все заметки из json файла
     clear - очистить json файл
@@ -318,6 +385,8 @@ while prog:
             List.edit_json()
         case 'rm':
             List.rm()
+        case 'rmjs':
+            List.del_from_json()
         case 'ex':
             List.output()
         case 'im':
