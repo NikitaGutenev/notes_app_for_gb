@@ -48,8 +48,11 @@ class ListNotes:
                 Ваш выбор: ''')
                 if id == 'print':
                     self.print()
-            note = self.notes[int(id)]
-
+            try:
+                note = self.notes[int(id)]
+            except KeyError:
+                print('Такой записки нет')
+                return
 
         choose = input(
         '''Что вы хотите изменить?
@@ -105,7 +108,11 @@ class ListNotes:
             Ваш выбор: ''')
             if id == 'print':
                 self.print()
-        return self.notes.pop(id:=int(id),f'Заметка №{id} не найдена')
+        res = self.notes.pop(id:=int(id),f'Заметка №{id} не найдена')
+        if type(res)==str and not res.isdigit():
+            print(res)
+        else:
+            print(f'Заметка ({res}) удалена')
     
     def output(self):
         mode = input('''Вы хотите добавить в файл новые заметки или полностью перезаписать файл?
@@ -143,12 +150,20 @@ class ListNotes:
             res = []
             if mode == 'a':
                 try:
-                    tmp = json.load(dt)
-                    res.append(tmp)
+                    dat = open('NOTES.json','r',encoding='UTF-8')
+                    tmp = json.load(dat)
+                    open('NOTES.json','w').close()
+                    if len(tmp) > 0:
+                        for i in tmp:
+                            res.append(i)
+                    else:
+                        res.append(tmp[0])
+                    dat.close()
                 except:
                     pass
             open('NOTES.json','w').close()
-            res.append(out)
+            if len(out) != 0:
+                res.append(out)
             json.dump(res,dt,ensure_ascii=False,indent=4)
             
         
@@ -179,7 +194,7 @@ class ListNotes:
         
     def clear(self):
         tmp = input('   вы уверены что хотите удалить ВСЕ заметки?\n1 - да\n0 - нет\nВаш выбор: ')
-        if tmp:
+        if int(tmp):
             open('NOTES.json','w').close()
         else:
             print('Вы ничего не удалили')
