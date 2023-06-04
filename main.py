@@ -1,6 +1,6 @@
 import datetime
 import json
-
+from os import name,system
 
 
 class Note:
@@ -105,20 +105,25 @@ class ListNotes:
         return self.notes.pop(id:=int(id),f'Заметка №{id} не найдена')
     
     def output(self):
-        mode = None
         mode = input('''Вы хотите добавить в файл новые заметки или полностью перезаписать файл?
         (будут внесены только текущие заметки. Какие именно - команда print)
         1 - добавить
         0 - перезаписать
-        print - посмотреть текущие заметки\nВаш выбор: ''')
+        print - посмотреть текущие заметки
+        Любой другой символ - выйти без изменений\nВаш выбор: ''')
         while mode not in ('1','0'):
+            if mode == 'print':
+                clear()
+                self.print()
+            else:
+                return
             mode = input('''Вы хотите добавить в файл новые заметки или полностью перезаписать файл?
         (будут внесены только текущие заметки. Какие именно - команда print)
         1 - добавить
         0 - перезаписать
-        print - посмотреть текущие заметки\nВаш выбор: ''')
-            if mode == 'print':
-                self.print()
+        print - посмотреть текущие заметки
+        Любой другой символ - выйти без изменений\nВаш выбор: ''')
+            
         out = {}
         for i in self.notes.items():
             c = i[1]
@@ -147,12 +152,15 @@ class ListNotes:
         
     def input(self):
         with open('NOTES.json','r',encoding='UTF-8') as dt:
-            item = json.load(dt)
-            for i in item:
-                for _,j in i.items():
-                    print('-------------')
-                    for k in j.items():
-                        print(f'{k[0]} - {k[1]}')
+            try:
+                item = json.load(dt)
+                for i in item:
+                    for _,j in i.items():
+                        print('-------------')
+                        for k in j.items():
+                            print(f'{k[0]} - {k[1]}')
+            except:
+                print('Файл json пуст')
 
     def print(self):
         if len(self.notes)>0:
@@ -173,6 +181,12 @@ class ListNotes:
         else:
             print('Вы ничего не удалили')
 
+def clear():  
+    if name == 'nt':  
+        _ = system('cls')
+    else:  
+        _ = system('clear')
+
 
 def commands():
     print('''Доступные команды:
@@ -183,16 +197,17 @@ def commands():
     im - вывести в консоль все заметки из json файла
     clear - очистить json файл
     print - вывести все ваши заметки в консоль
-    cmd - показать доступные команды
     exit - закрыть приложение "Заметки"''')
 
 
 prog = True
-print('Здравствуйте! Это приложение "Заметки"\n Чтобы показать список команд - введите cmd')
+print('Здравствуйте! Это приложение "Заметки"')
 List = ListNotes()
 while prog:
+    commands()
     print('Введите команду: ')
     tmp = input()
+    clear()
     match tmp:
         case 'add':
             List.add()
@@ -209,10 +224,9 @@ while prog:
             List.clear()
         case 'print':
             List.print()
-        case 'cmd':
-            commands()
         case 'exit':
             prog = False
         case _:
             print('Неверная команда')
+clear()
 print('Пока-пока))')
