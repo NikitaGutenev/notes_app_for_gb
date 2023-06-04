@@ -8,7 +8,7 @@ class Note:
     __id = []
     def __new__(cls):
         cls.__id.append(get_new_id())
-        if len(cls.__id)==2 and cls.__id[-2] == cls.__id[-1]:
+        if len(cls.__id)>=2 and cls.__id[-2] >= cls.__id[-1]:
             cls.__id[-1] = cls.__id[-2] + 1
         return super().__new__(cls)
 
@@ -247,7 +247,10 @@ class ListNotes:
                                 tmp_note.data = k[1]
             
             if find_flag:
+                reserv_tmp_note = deepcopy(tmp_note)
                 tmp_note = self.edit('json',tmp_note)
+                if tmp_note == None:
+                    tmp_note = reserv_tmp_note
             else:
                 print(f'Такого id({id}) не существует')
             
